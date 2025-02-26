@@ -229,6 +229,7 @@ while True:
         limpar()
         login()
     elif esc == "3":
+        limpar()
         break
     else:
         print("Escolha errada!")
