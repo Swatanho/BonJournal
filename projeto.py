@@ -6,9 +6,12 @@ import re
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # seta o caminho da pasta
 
+
+# função pra limpar o terminal
 def limpar():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+# função para criar um arquivo JSON onde será armazenado os livros
 def criar_arquivo_livros(email):
     nome_arquivo = f"{email}_livros.json"
     if not os.path.exists(nome_arquivo):
@@ -22,8 +25,8 @@ def criar_arquivo_livros(email):
         print(f"Arquivo '{nome_arquivo}' já existe.")
     return nome_arquivo
 
+# Carrega os livros do usuário a partir de um arquivo JSON.
 def carregarlivros(email):
-    """Carrega os livros do usuário a partir de um arquivo JSON."""
     nome_arquivo = f"{email}_livros.json"
     if not os.path.exists(nome_arquivo):
         criar_arquivo_livros(email)
@@ -34,13 +37,14 @@ def carregarlivros(email):
         print(f"Erro ao carregar os livros: {e}")
         return []
 
+#   Salva os livros do usuário em um arquivo JSON.
 def salvar_livros(email, livros):
-    """Salva os livros do usuário em um arquivo JSON."""
     nome_arquivo = f"{email}_livros.json"
     with open(nome_arquivo, "w") as f:
         json.dump(livros, f, indent=4)
     print(f"-  Livros salvos em '{nome_arquivo}'.")
 
+# função para dar uma nota a um livro adicionado
 def obter_nota():
     while True:
         try:
@@ -52,7 +56,7 @@ def obter_nota():
         except ValueError:
             print("Entrada inválida. Por favor, insira um número.")
 
-
+# Função pra validar email
 def validar_email(email):
     # Regex para validar o formato do e-mail
     regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -61,19 +65,25 @@ def validar_email(email):
     else:
         return False
 
+# Função para realizar validação da senha
 def validar_senha(senha):
     if len(senha) < 8:
         return False
+    # Verifica se a senha tem letras maíusculas
     if not re.search(r'[A-Z]', senha):
         return False
+    # Verifica se a senha tem letras minúsculas
     if not re.search(r'[a-z]', senha):
         return False
+    # Verifica se a senha tem um número
     if not re.search(r'[0-9]', senha):
         return False
+    # Verifica se a senha tem um caractere especial
     if not re.search(r'[!@#$%^&*(),.?":{}|<>]', senha):
         return False
     return True
 
+# Função para realizar Cadastro
 def cadastro():
     print("=====================================")
     print("===== ///// CADASTRO ///// =====")
