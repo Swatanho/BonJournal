@@ -3,9 +3,44 @@ import hashlib
 import time
 import json
 import re
+import smtplib
+from email.mime.text import MIMEText
+import random
+
+class cor():
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    BLUE = "\033[34m"
+    YELLOW = "\033[93m"
+    RESET = "\033[0m"
+
+
+def gerar_codigo_2fa():
+    return str(random.randint(100000, 999999))  # Gera um número aleatorio ai
+
+def validar_codigo_2fa(codigo_gerado):
+    codigo_usuario = input(f"{cor.BLUE}Digite o código de 6 dígitos enviado para você: {cor.RESET}")
+    return codigo_usuario == codigo_gerado
+
+def enviar_email(destinatario, codigo):
+    remetente = 'mestredoscodigos4@gmail.com'
+    senha = "knec bptb kmhw kfnv"  # Senha do e-mail (Nesse caso, usa a senha de app menos seguro)
+
+    mensagem = MIMEText(f"Seu código de verificação é: {codigo}")
+    mensagem["Subject"] = "Código de Verificação BonJournal"
+    mensagem["From"] = remetente
+    mensagem["To"] = destinatario
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as servidor:
+            servidor.starttls()
+            servidor.login(remetente, senha)
+            servidor.sendmail(remetente, destinatario, mensagem.as_string())
+        print("Código enviado por e-mail.")
+    except Exception as e:
+        print(f"Erro ao enviar e-mail: {e}")
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # seta o caminho da pasta
-
 
 # função pra limpar o terminal
 def limpar():
@@ -14,15 +49,12 @@ def limpar():
 # função para criar um arquivo JSON onde será armazenado os livros
 def criar_arquivo_livros(email):
     nome_arquivo = f"{email}_livros.json"
-    if not os.path.exists(nome_arquivo):
-        try:
-            with open(nome_arquivo, "w") as f:
-                json.dump([], f)
+    try:
+        with open(nome_arquivo, "w") as f:
+            json.dump([], f)
             print(f"Arquivo '{nome_arquivo}' criado com sucesso.")
-        except Exception as e:
+    except Exception as e:
             print(f"Erro ao criar o arquivo '{nome_arquivo}': {e}")
-    else:
-        print(f"Arquivo '{nome_arquivo}' já existe.")
     return nome_arquivo
 
 # Carrega os livros do usuário a partir de um arquivo JSON.
@@ -37,7 +69,7 @@ def carregarlivros(email):
         print(f"Erro ao carregar os livros: {e}")
         return []
 
-#   Salva os livros do usuário em um arquivo JSON.
+# Salva os livros do usuário em um arquivo JSON
 def salvar_livros(email, livros):
     nome_arquivo = f"{email}_livros.json"
     with open(nome_arquivo, "w") as f:
@@ -48,7 +80,7 @@ def salvar_livros(email, livros):
 def obter_nota():
     while True:
         try:
-            nota = int(input("Nota (1 a 5): "))
+            nota = int(input("Qual nota daria a esse livro? (de 1 a 5): "))
             if 1 <= nota <= 5:
                 return nota
             else:
@@ -85,9 +117,9 @@ def validar_senha(senha):
 
 # Função para realizar Cadastro
 def cadastro():
-    print("=====================================")
+    print(f"{cor.YELLOW}=====================================")
     print("===== ///// CADASTRO ///// =====")
-    print("=====================================")
+    print(f"====================================={cor.RESET}")
     while True:
         email = input("Informe seu endereço de e-mail: ")
         if validar_email(email):
@@ -119,9 +151,9 @@ def cadastro():
 
 
 def login():
-    print("=====================================")
+    print(f"{cor.YELLOW}=====================================")
     print("===== ///// LOG-IN ///// =====")
-    print("=====================================")
+    print(f"====================================={cor.RESET}")
     while True:
         email = input("[Informe seu endereço de e-mail]: ")
         if validar_email(email):
@@ -139,13 +171,25 @@ def login():
     for linha in credenciais:
         email_armazenado, senha_armazenada = linha.strip().split(",")
         if email == email_armazenado and sen_hash == senha_armazenada:
-            print("Logado com sucesso!")
-            time.sleep(1)
-            limpar()
-            menulivro(email)
-            return email
+            print("Senha correta! Verificação de dois fatores ativada.")
+            
+            # Gerar e "enviar" o código 2FA
+            codigo_2fa = gerar_codigo_2fa()
+            enviar_email(email, codigo_2fa)
+            
+            # Validar o código 2FA
+            if validar_codigo_2fa(codigo_2fa):
+                print("Código correto! Logado com sucesso.")
+                time.sleep(1)
+                limpar()
+                menulivro(email)
+                return email
+            else:
+                print("Código incorreto! Falha no login.")
+                time.sleep(2)
+                return None
 
-    print("Falha no login!")
+    print("Falha no login! E-mail ou senha incorretos.")
     time.sleep(2)
     return None
 
@@ -153,13 +197,13 @@ def menulivro(email):
     livros = carregarlivros(email)
     while True:
         limpar()
-        print("=====================================")
+        print(f"{cor.YELLOW}=====================================")
         print("===== ///// BONJOURNAL ///// =====")
-        print("=====================================")
-        print("[1] Adicionar Livro")
-        print("[2] Ver Livros")
-        print("[3] Deletar Livro")
-        print("[4] Sair")
+        print(f"====================================={cor.RESET}")
+        print(f"{cor.GREEN}[1] Adicionar Livro")
+        print(f"[2] Ver Livros{cor.RESET}")
+        print(f"{cor.RED}[3] Excluir Livro")
+        print(f"[4] Sair{cor.RESET}")
         print("=====================================")
         escolha = input("Escolha uma opção: ")
 
@@ -189,18 +233,18 @@ def menulivro(email):
                     print(f"   [Autor]: {livro['autor']}")
                     print(f"   [Ano de Publicação]: {livro['ano']}")
                     print(f"   [Data de leitura]: {livro['data']}")
-                    print(f"   [Nota]: {'⭐' * livro['nota']}")  # Exibe a nota em estrelas
-                    print(f"   [Review]: {livro['review']}")  # Exibe a review
+                    print(f"   [Nota]: {'⭐' * livro['nota']}")  # Mostra a nota em estrelas
+                    print(f"   [Review]: {livro['review']}")  
                     print("=====================================")
             input("Pressione ENTER para voltar.")
             
         elif escolha == "3":
             limpar()
             if not livros:
-                print("Não há livros para deletar.")
+                print("Não há livros para excluir.")
                 input("Pressione ENTER para voltar.")
             else:
-                print("Selecione o número do livro que deseja deletar:\n")
+                print("Selecione o número do livro que deseja excluir:\n")
                 for i, livro in enumerate(livros, 1):
                     print(f"{i}. [Título]: {livro['titulo']} - [Autor]: {livro['autor']}")
                 try:
@@ -224,12 +268,12 @@ def menulivro(email):
 
 while True:
     limpar()
-    print("=====================================")
+    print(f"{cor.YELLOW}=====================================")
     print("===== ///// BEM VINDO AO APP ///// =====")
     print("=====================================")
-    print("[1] Cadastre-se")
-    print("[2] Já tem uma conta? Faça o Login")
-    print("[3] Sair do app")
+    print(f"{cor.GREEN}[1] Cadastre-se")
+    print(f"[2] Já tem uma conta? Faça o Login{cor.RESET}")
+    print(f"{cor.RED}[3] Sair do app{cor.RESET}")
     print("=====================================")
     esc = input("Digite sua escolha: ")
     if esc == "1":
